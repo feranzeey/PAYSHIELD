@@ -1,0 +1,26 @@
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Git
+.git/
+
+# Logs
+*.log
+logs/
+
+# Database backups
+backups/
+*.dump
+
+# Unused backup application versions
+app_day3_backup.py
+app_day3_dashboard_backup.py

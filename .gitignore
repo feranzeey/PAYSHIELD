@@ -8,3 +8,10 @@ __pycache__/
 .mypy_cache/
 .DS_Store
 *.log
+
+# Database backups
+backups/
+*.dump
+
+# Backup logs
+logs/

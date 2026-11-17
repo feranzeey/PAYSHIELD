@@ -1,79 +1,141 @@
-# PayShield — Secure Fintech Payment Infrastructure
+# PayShield – Secure Fintech Payment Infrastructure
 
-**Building reliable, secure, and resilient payment infrastructure.**
+**Building reliable, resilient, and recoverable payment infrastructure.**
 
-PayShield is a fintech payment infrastructure project designed to demonstrate how reliable payment systems can be developed, operated, monitored, and maintained.
+PayShield is a containerized fintech payment API built to demonstrate practical backend engineering, database reliability, and DevOps automation.
 
-Built with Python, FastAPI, and PostgreSQL, the project focuses on payment processing, transaction integrity, database reliability, API health monitoring, and production-oriented engineering practices.
+The project uses FastAPI, PostgreSQL, Docker, and Bash automation to demonstrate payment processing, persistent transaction storage, automated database backups, and disaster recovery.
 
-The goal is to explore the infrastructure and operational engineering principles required to keep financial applications reliable and available.
+## Architecture
 
----
-
-## Project Objectives
-
-PayShield explores practical engineering challenges in fintech infrastructure:
-
-- **Payment Reliability:** Building dependable payment-processing workflows.
-- **Transaction Integrity:** Maintaining consistent financial transaction records.
-- **Database Reliability:** Using PostgreSQL for persistent transaction storage.
-- **API Availability:** Exposing application endpoints through FastAPI.
-- **Operational Monitoring:** Tracking application health and service readiness.
-- **Error Handling:** Managing application failures and invalid requests.
-- **DevOps Practices:** Applying version control, environment configuration, and deployment practices.
+```text
+             Client / Dashboard
+                     |
+                     v
+              FastAPI Payment API
+                     |
+                     v
+                 PostgreSQL
+                     |
+              Persistent Volume
+                     |
+                     v
+            Automated Backup System
+                     |
+             Bash + Cron + pg_dump
+                     |
+                     v
+              Backup Archives
+                     |
+                     v
+             Disaster Recovery
+                 pg_restore
+```
 
 ## Technology Stack
 
 | Technology | Purpose |
 |---|---|
-| Python | Backend development |
-| FastAPI | REST API framework |
-| PostgreSQL | Relational database |
+| Python 3.12 | Backend development |
+| FastAPI | REST API |
+| PostgreSQL 16 | Payment data persistence |
+| Docker | Application containerization |
+| Docker Compose | Multi-container orchestration |
 | Uvicorn | ASGI application server |
-| Git & GitHub | Version control |
-| Linux / Ubuntu | Development environment |
-| Docker | Containerization (planned/if implemented) |
+| Bash | Backup automation |
+| Cron | Scheduled database backups |
+| pg_dump | Database backup |
+| pg_restore | Database recovery |
+| Git and GitHub | Version control |
 
-## Architecture Overview
+## Key Features
 
-```text
-          Client Application
-                  |
-                  v
-             FastAPI API
-                  |
-                  v
-          Payment Processing
-                  |
-                  v
-             PostgreSQL
-                  |
-                  v
-         Transaction Records
-                  |
-                  v
-       Monitoring & Health Checks
+### 1. Payment API
+- Create payment transactions.
+- Retrieve payment records.
+- Retrieve individual payments using their references.
+- View payment summary information.
+- Handle successful and failed payment scenarios.
+
+### 2. Database Persistence
+- PostgreSQL 16 database.
+- Persistent Docker volume.
+- Database health checks.
+- Application startup dependency on database health.
+
+### 3. Automated Database Backups
+A Bash script automates PostgreSQL database backups.
+
+Features include:
+- Custom timestamped backup filenames.
+- PostgreSQL custom-format backups.
+- Backup file validation.
+- Backup size reporting.
+- Automatic cleanup of older backups.
+- Backup execution logging.
+
+### 4. Scheduled Backups
+
+Cron schedules database backups daily at 1:00 AM.
+
+Example configuration:
+
+```cron
+0 1 * * * cd /home/dadaferanmi/projects/payshield && /usr/bin/bash /home/dadaferanmi/projects/payshield/scripts/backup.sh >> /home/dadaferanmi/projects/payshield/logs/backup.log 2>&1
 ```
 
-## Current Development Status
+### 5. Disaster Recovery
 
-PayShield is under active development.
+The project includes a tested PostgreSQL restoration workflow using `pg_restore`.
 
-| Component | Status |
-|---|---|
-| Python backend | In development |
-| FastAPI application | Running |
-| Uvicorn server | Configured |
-| PostgreSQL integration | Implemented |
-| Environment-based configuration | Implemented |
-| Payment validation | In development |
-| Transaction idempotency | Planned |
-| Monitoring and observability | In development |
-| Docker deployment | Planned |
+Recovery verification was performed using a separate temporary database.
 
-*Status reflects the development stage and should be updated as features are verified.*
+**Verified recovery result:**
+- Six payment records successfully restored.
+- Successful and failed payment records preserved.
+- Payment references and transaction details retained.
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | Application homepage |
+| GET | `/dashboard` | Payment dashboard |
+| GET | `/health` | Application health check |
+| GET | `/ready` | Readiness check |
+| POST | `/payments` | Create payment |
+| GET | `/payments` | Retrieve payments |
+| GET | `/payments/{reference}` | Retrieve individual payment |
+| GET | `/metrics/summary` | Payment summary |
+
+Interactive API documentation:
+
+`http://localhost:8000/docs`
+
+## Project Structure
+
+```text
+payshield/
+├── app.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── .dockerignore
+├── .gitignore
+├── .env.example
+├── scripts/
+│   └── backup.sh
+├── backups/             # Ignored by Git
+└── logs/                # Ignored by Git
+```
 
 ## Getting Started
+
+### Prerequisites
+
+- Docker
+- Docker Compose
+- Git
 
 ### 1. Clone the repository
 
@@ -82,88 +144,127 @@ git clone https://github.com/feranzeey/payshield.git
 cd payshield
 ```
 
-### 2. Create a virtual environment
+### 2. Configure environment variables
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+Create `.env` and `.env.docker` using the environment variable names documented below.
 
-### 3. Install dependencies
-
-If a `requirements.txt` file is available:
-
-```bash
-pip install -r requirements.txt
-```
-
-Otherwise, install the current application dependencies:
-
-```bash
-pip install fastapi "uvicorn[standard]" psycopg2-binary python-dotenv
-```
-
-### 4. Configure environment variables
-
-Create a `.env` file in the project root:
+Example configuration:
 
 ```env
-DATABASE_URL=postgresql://USERNAME:PASSWORD@localhost:5432/DATABASE_NAME
+POSTGRES_DB=payshield_db
+POSTGRES_USER=payshield_user
+POSTGRES_PASSWORD=CHANGE_ME_TO_A_SECURE_PASSWORD
+DATABASE_URL=postgresql://payshield_user:CHANGE_ME_TO_A_SECURE_PASSWORD@db:5432/payshield_db
 ```
 
-Replace the placeholders with your local PostgreSQL credentials.
+Use appropriate local values in both environment files. Never commit real credentials.
 
-**Security:** Never commit `.env` files, database passwords, API keys, or other secrets to GitHub.
-
-### 5. Start the application
+### 3. Start the application
 
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+docker compose up -d --build
 ```
 
-### 6. Access API documentation
+### 4. Check running containers
 
-Open:
-
-```text
-http://localhost:8000/docs
+```bash
+docker compose ps
 ```
 
-## Engineering Focus
+### 5. Check API health
 
-PayShield is being developed around several important fintech infrastructure principles:
+```bash
+curl http://localhost:8000/health
+```
 
-1. Reliability over simply making an application run.
-2. Secure handling of application configuration and credentials.
-3. Consistency of financial transaction records.
-4. Prevention of duplicate payment processing.
-5. Observability and early detection of application failures.
-6. Maintainable deployment and operational workflows.
+Expected response:
 
-## Roadmap
+```json
+{
+  "status": "healthy",
+  "service": "payment-api"
+}
+```
 
-- [x] Initialize Python backend.
-- [x] Integrate FastAPI.
-- [x] Configure Uvicorn.
-- [x] Establish PostgreSQL connectivity.
-- [x] Implement environment-based database configuration.
-- [ ] Strengthen payment request validation.
-- [ ] Implement idempotency protection.
-- [ ] Improve transaction error handling.
-- [ ] Implement structured application logging.
-- [ ] Introduce Prometheus and Grafana monitoring.
-- [ ] Containerize with Docker.
-- [ ] Deploy using Kubernetes.
-- [ ] Implement CI/CD automation.
-- [ ] Introduce automated testing and reliability checks.
+## Database Backup and Recovery
 
-## Why PayShield?
+### Run a manual backup
 
-Financial applications cannot afford unreliable infrastructure.
+```bash
+/usr/bin/bash scripts/backup.sh
+```
 
-A failed transaction, duplicated payment, database outage, or poorly monitored service can damage customer trust and business operations.
+### Inspect available backups
 
-PayShield is an engineering project focused on understanding and addressing these challenges through backend development, database engineering, DevOps automation, and Site Reliability Engineering.
+```bash
+ls -lh backups/
+```
+
+### Restore a backup
+
+Create a separate test database:
+
+```bash
+docker exec payshield-db createdb \
+  -U payshield_user payshield_restore_test
+```
+
+Restore the backup:
+
+```bash
+docker exec -i payshield-db pg_restore \
+  -U payshield_user \
+  -d payshield_restore_test \
+  --no-owner \
+  --no-privileges \
+  < backups/YOUR_BACKUP_FILE.dump
+```
+
+Verify restored payment records:
+
+```bash
+docker exec payshield-db psql \
+  -U payshield_user \
+  -d payshield_restore_test \
+  -c "SELECT COUNT(*) FROM payments;"
+```
+
+## Security
+
+- Environment files excluded from Git.
+- Database backup files excluded from Git.
+- Docker build context excludes local secrets.
+- Database credentials supplied through environment variables.
+- Persistent database storage configured using Docker volumes.
+
+## Project Verification
+
+The following tests have been performed:
+
+- [x] Dockerized application startup.
+- [x] PostgreSQL connectivity.
+- [x] Payment record persistence.
+- [x] Successful payment testing.
+- [x] Failed payment testing.
+- [x] Manual database backup.
+- [x] Backup file validation.
+- [x] Cron scheduling configuration.
+- [x] Backup logging.
+- [x] Backup retention execution.
+- [x] Database restoration.
+- [x] Restored payment count verification.
+- [x] API health endpoint verification.
+- [x] Git and Docker secret exclusion.
+
+## Future Improvements
+
+- [ ] Prometheus and Grafana monitoring.
+- [ ] Automated API testing.
+- [ ] CI/CD using GitHub Actions.
+- [ ] Backup upload to remote object storage.
+- [ ] Backup encryption.
+- [ ] Database recovery automation.
+- [ ] Kubernetes deployment.
 
 ## Author
 
@@ -176,4 +277,4 @@ DevOps Engineer | Cloud Infrastructure | Automation | Site Reliability Engineeri
 
 ---
 
-*PayShield is an independent engineering and portfolio project. It is not currently presented as a production-certified payment processor or a live financial service.*
+PayShield is an independent engineering and portfolio project. It is not presented as a production-certified payment processor or live financial service.
